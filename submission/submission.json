@@ -3,12 +3,12 @@
   "members": [
     "TranHaiLong-2A202603891"
   ],
-  "incident": "",
+  "incident": "S1",
   "decision_v1": "Cải tiến thêm",
-  "decision_v2": "",
+  "decision_v2": "Cải tiến thêm",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Tracking trạng thái đã giao có thể thiếu ngày, và một hãng có thể ghi nhận nhiều kiện trễ trong cùng giờ. Hàng chờ duyệt thực có thể dồn hơn dữ liệu mock.",
+    "reduce_or_prevent": "Cổng ngăn hoàn hoặc báo lỗi dựa trên ngày giao thiếu, ngăn ghi lỗi thứ ba tự động cho một hãng trong ngày, và chuyển ca từ chối sai sang người. Cổng giảm rủi ro khi tracking có giá trị sai và khi người duyệt quá tải.",
+    "measure_in_pilot": "Đo tỷ lệ thiếu và sai ngày giao theo hãng, sai lệch sổ sau đối soát, khối lượng duyệt lỗi hãng theo giờ, p95 thời gian đến lượt và chi phí tổng gồm cả xử lý ngoại lệ tại hai kho."
   }
 }

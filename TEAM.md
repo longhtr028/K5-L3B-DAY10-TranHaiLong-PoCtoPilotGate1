@@ -3,7 +3,7 @@
 - Tên nhóm: TranHaiLong
 - Lớp: L3B
 - Repo: K5-L3B-DAY10-TranHaiLong-PoCtoPilotGate1
-- Thẻ sự cố: đang chờ xác nhận.
+- Thẻ sự cố: S1, tự bốc cho bài một người sau khi chốt vòng 1; chưa có xác nhận phân công từ Coach.
 - Hình thức thực hiện: một học viên đảm nhiệm ba vai theo yêu cầu của Long.
 
 | STT | Họ và tên | MSSV | Vai | Trưởng nhóm |
@@ -22,7 +22,7 @@ Long xác định phạm vi bài một người. Có dùng Codex để đọc st
 
 ### Bằng chứng
 
-Phiếu A ghi logic chọn ngưỡng trước khi chạy. Commit ký: 66f31c2. Phiếu B ghi hai lần chạy R-base-before-20261119-211151-b45eeb và R-base-prepared-20261119-234221-886ca2; mốc chốt cổng 9c0bbd4b.
+Phiếu A ghi logic chọn ngưỡng trước khi chạy. Commit ký: 66f31c2. Phiếu B ghi hai lần chạy R-base-before-20261119-211151-b45eeb và R-base-prepared-20261119-234221-886ca2; mốc chốt cổng 9c0bbd4b. Phiếu C và báo cáo R-S1-grade-20261119-234540-ad1cda ghi phân tích sự cố và quyết định v2.
 
 ### Exit ticket
 

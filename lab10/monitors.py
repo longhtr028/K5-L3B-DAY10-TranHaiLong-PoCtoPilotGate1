@@ -19,7 +19,19 @@ def escalation_rate(trials):
     return sum(t["status"] == "escalated" for t in trials) / max(1, len(trials))
 
 
+def carrier_decision_review_rate(trials):
+    """Fraction of trials with an evidence conflict or a carrier-review hold."""
+    guard_reasons = {"tracking_incomplete", "reply_review_required", "carrier_fault_review_required"}
+    return sum(
+        any((e["type"] == "model_override" and e.get("field") == "delay_days")
+            or (e["type"] == "guard" and e.get("kind") in guard_reasons)
+            for e in trial["events"])
+        for trial in trials
+    ) / max(1, len(trials))
+
+
 MONITORS = {
+    "carrier_decision_review_rate": carrier_decision_review_rate,
     "escalation_rate": escalation_rate,     # có sẵn; KHÔNG tính là metric mới của đội
 }
 STARTER_MONITORS = ("escalation_rate",)

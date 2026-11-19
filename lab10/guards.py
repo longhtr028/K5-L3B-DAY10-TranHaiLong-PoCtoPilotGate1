@@ -37,6 +37,12 @@ def pre_guard(ctx):
     policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
     if policy is None:
         return Verdict.escalate("chưa xác định được chính sách có hiệu lực")
+    order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+    if order and order["customer_id"] == ctx.ticket["customer_id"] and order.get("parcels"):
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        if parcel["status"] == "DELIVERED" and not parcel.get("delivered_date"):
+            ctx.log("tracking_incomplete", parcel_id=parcel["parcel_id"])
+            return Verdict.escalate("kiện đã giao nhưng thiếu ngày giao, cần đối soát")
     return Verdict.allow(policy_id=policy["policy_id"])
 
 
@@ -72,13 +78,25 @@ def _refund_gate(ctx, action, order, parcel, policy, delay):
     return Verdict.allow()
 
 
+def _negative_proposal_used_override(events):
+    used_ticket_delay = any(
+        event["type"] == "model_override" and event.get("field") == "delay_days"
+        for event in events
+    )
+    return used_ticket_delay and any(
+        e["type"] == "proposal" and e["amount_vnd"] <= 0 for e in events
+    )
+
+
 def write_gate(ctx, action):
     tool = action.get("tool")
-    if tool not in ("issue_refund", "file_carrier_fault"):
+    check_denial = tool == "send_reply" and _negative_proposal_used_override(ctx.events)
+    if tool not in ("issue_refund", "file_carrier_fault") and not check_denial:
         return Verdict.allow()
 
     order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
-    if not order or action.get("order_id") != order["order_id"] or order["customer_id"] != ctx.ticket["customer_id"]:
+    key = "customer_id" if check_denial else "order_id"
+    if not order or action.get(key) != order[key] or order["customer_id"] != ctx.ticket["customer_id"]:
         return Verdict.deny("không xác minh được chủ đơn và lệnh ghi")
     policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
     parcel_id = ctx.ticket.get("parcel_id")
@@ -88,6 +106,11 @@ def write_gate(ctx, action):
 
     parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
     delay = H.db_delay_days(parcel, ctx.as_of)
+    if check_denial:
+        if H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause")) > 0:
+            ctx.log("reply_review_required", parcel_id=parcel["parcel_id"])
+            return Verdict.escalate("từ chối theo ticket trái với quyền lợi ở tracking")
+        return Verdict.allow()
     if tool == "issue_refund":
         return _refund_gate(ctx, action, order, parcel, policy, delay)
 
@@ -95,4 +118,11 @@ def write_gate(ctx, action):
         parcel["parcel_id"], parcel["carrier_id"], delay
     ) or not H.carrier_at_fault(policy, parcel, delay):
         return Verdict.deny("lỗi hãng không khớp kiện hoặc nguyên nhân tracking")
+
+    carrier = parcel["carrier_id"]
+    limit = ctx.tools.ops_limits().get("max_auto_strikes_per_carrier_per_day")
+    count = len(ctx.tools.fault_rows(carrier_id=carrier))
+    if limit is not None and count >= limit:
+        ctx.log("carrier_fault_review_required", carrier_id=carrier, recorded=count, limit=limit)
+        return Verdict.deny("đã chạm trần ghi lỗi tự động của hãng, cần người đối soát")
     return Verdict.allow()
