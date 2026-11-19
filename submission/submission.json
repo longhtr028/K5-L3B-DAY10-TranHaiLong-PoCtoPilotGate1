@@ -1,8 +1,10 @@
 {
-  "team": "",
-  "members": [],
+  "team": "K5-L3B-DAY10-TranHaiLong-PoCtoPilotGate1",
+  "members": [
+    "TranHaiLong-2A202603891"
+  ],
   "incident": "",
-  "decision_v1": "",
+  "decision_v1": "Cải tiến thêm",
   "decision_v2": "",
   "three_lines": {
     "environment_assumption": "",

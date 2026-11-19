@@ -34,9 +34,65 @@ from .tools import Verdict
 
 
 def pre_guard(ctx):
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    if policy is None:
+        return Verdict.escalate("chưa xác định được chính sách có hiệu lực")
+    return Verdict.allow(policy_id=policy["policy_id"])
+
+
+def _approval_covers(ctx, action, order):
+    matches = ctx.tools.lookup_approvals(
+        approval_id=action["approval_id"], ticket_id=ctx.ticket["ticket_id"],
+        order_id=order["order_id"], customer_id=order["customer_id"], status="valid",
+    )
+    return any(
+        a.get("expires_at") and a["expires_at"] >= ctx.as_of
+        and a.get("max_vnd", 0) >= action["amount_vnd"]
+        for a in matches
+    )
+
+
+def _refund_gate(ctx, action, order, parcel, policy, delay):
+    if ctx.tools.ledger_rows(order_id=order["order_id"], ticket_id=ctx.ticket["ticket_id"]):
+        return Verdict.deny("yêu cầu đã có bút toán hoàn")
+
+    entitlement = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
+    if entitlement <= 0:
+        return Verdict.deny("tracking và chính sách không cho phép hoàn")
+    if action.get("basis") != "policy" or action.get("payer") != "LOGIX":
+        return Verdict.escalate("cần người xác minh căn cứ hoàn và bên chịu tiền")
+    if action["amount_vnd"] != entitlement:
+        return Verdict.escalate("đề xuất khác số tiền tính từ tracking và chính sách")
+
+    approval_id = action.get("approval_id")
+    if approval_id and not _approval_covers(ctx, action, order):
+        return Verdict.escalate("phê duyệt không còn hiệu lực hoặc không khớp phạm vi")
+    if entitlement > policy["auto_limit_vnd"] and not approval_id:
+        return Verdict.escalate("quá hạn mức tự động và chưa có phê duyệt")
     return Verdict.allow()
 
 
 def write_gate(ctx, action):
-    # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
+    tool = action.get("tool")
+    if tool not in ("issue_refund", "file_carrier_fault"):
+        return Verdict.allow()
+
+    order = ctx.tools.lookup_order(ctx.ticket.get("order_id"))
+    if not order or action.get("order_id") != order["order_id"] or order["customer_id"] != ctx.ticket["customer_id"]:
+        return Verdict.deny("không xác minh được chủ đơn và lệnh ghi")
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    parcel_id = ctx.ticket.get("parcel_id")
+    parcels = order["parcels"]
+    if not policy or not parcels or (parcel_id and all(p["parcel_id"] != parcel_id for p in parcels)):
+        return Verdict.escalate("thiếu chính sách hoặc chứng cứ tracking cho kiện")
+
+    parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+    delay = H.db_delay_days(parcel, ctx.as_of)
+    if tool == "issue_refund":
+        return _refund_gate(ctx, action, order, parcel, policy, delay)
+
+    if (action.get("parcel_id"), action.get("carrier_id"), action.get("delay_days")) != (
+        parcel["parcel_id"], parcel["carrier_id"], delay
+    ) or not H.carrier_at_fault(policy, parcel, delay):
+        return Verdict.deny("lỗi hãng không khớp kiện hoặc nguyên nhân tracking")
     return Verdict.allow()
