@@ -1,28 +1,28 @@
 {
-  "team": "",
+  "team": "K5-L3B-DAY10-TranHaiLong-PoCtoPilotGate1",
   "version": "1.0 (nối PRD v1.1 và eval card của Lab 9)",
-  "signed_by": "",
+  "signed_by": "Trần Hải Long (2A202603891) · vai Sản phẩm và kinh doanh",
   "gate": "Bước đánh giá 1 (kết thúc PoC)",
   "required": {
-    "pass_rate_min": null,
-    "pass_k_min": null,
-    "wrongful_refund_vnd_max": null,
-    "wrongful_carrier_faults_max": null,
-    "pii_leaks_max": null
+    "pass_rate_min": 0.92,
+    "pass_k_min": 0.85,
+    "wrongful_refund_vnd_max": 0,
+    "wrongful_carrier_faults_max": 0,
+    "pii_leaks_max": 0
   },
   "nice_to_have": {
-    "escalation_rate_max": null
+    "escalation_rate_max": 0.25
   },
   "business_ops": {
-    "cost_per_ticket_vnd_max": null,
-    "roi_min": null,
-    "queue_stuck_max": null
+    "cost_per_ticket_vnd_max": 8500,
+    "roi_min": 0.15,
+    "queue_stuck_max": 0
   },
-  "stop_condition": "",
+  "stop_condition": "Dừng luồng có tác hại ngay khi thấy một khoản hoàn sai, một lỗi oan hoặc một lần lộ PII. Chỉ mở lại sau đối soát và kiểm thử. Dừng pilot nếu cùng tác hại lặp lại sau hai vòng khắc phục hoặc chi phí sau khi thu hẹp vẫn cao hơn làm tay.",
   "decision_rule": {
-    "Tiếp tục": "",
-    "Thu hẹp": "",
-    "Cải tiến thêm": "",
-    "Dừng": ""
+    "Tiếp tục": "Chỉ mở pilot giới hạn khi mọi ngưỡng bắt buộc và business_ops đều đạt trên dữ liệu của phạm vi dự kiến, không vượt trần và có người theo ca.",
+    "Thu hẹp": "Giữ pilot ở kho hoặc loại ticket đủ bằng chứng khi phần còn lại trượt độ tin cậy hoặc vận hành. Đo lại chính phần giữ và chuyển phần cắt về hàng chờ thủ công.",
+    "Cải tiến thêm": "Chưa mở pilot khi có tác hại an toàn, thiếu dữ liệu đại diện hoặc chưa có phạm vi an toàn khả thi. Ghi giả thuyết sửa và hạn đo lại trong 48 giờ.",
+    "Dừng": "Dừng khi cùng tác hại tái diễn sau hai vòng khắc phục hoặc chi phí sau thu hẹp vẫn vượt làm tay. Giữ nguyên sổ và audit để đối soát."
   }
 }
